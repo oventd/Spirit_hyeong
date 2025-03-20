@@ -1,0 +1,51 @@
+{
+    "MDL": {
+      "geo": {
+        "all": true,
+        "isReferenced": false,
+        "maya": true
+      }
+    },
+    "MMV": {
+      "camera": {
+        "all": true,
+        "isReferenced": false,
+        "maya":true
+      },
+      "asset": {
+        "maya":true
+      }
+    },
+    "LAY": {
+      "camera": {
+        "all": true,
+        "isReferenced": false,
+        "maya":true
+      },
+      "asset": {
+        "all": true,
+        "isReferenced": true,
+        "maya":true
+      }
+    },
+    "ANM": {
+      "camera": {
+        "all": true,
+        "isReferenced": false,
+        "maya":true
+      },
+      "asset": {
+        "all": false,
+        "isReferenced": true,
+        "maya":false
+      }
+    },
+    "LGT": {
+      "light": {
+        "all": true,
+        "isReferenced": false,
+        "maya":false
+      }
+    }
+  }
+  

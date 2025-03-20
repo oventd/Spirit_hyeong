@@ -1,0 +1,12 @@
+{
+  "maya": {
+    "module": "maya_work_file_creator",
+    "class": "MayaWorkFileCreator",
+    "path": "load/manager/dcc_work_file_creators/maya_work_file_creator.py"
+  },
+  "houdini": {
+    "module": "houdini_work_file_creator",
+    "class": "HoudiniWorkFileCreator",
+    "path": "load/manager/dcc_work_file_creators/houdini_work_file_creator.py"
+  }
+}
