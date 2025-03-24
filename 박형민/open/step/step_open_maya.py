@@ -31,25 +31,22 @@ class StepOpenMaya(ABC):
     # Publish   
     class Publish(ABC):
 
-        _publish_settings = None 
-        _caching_settings = None
-
         def __init__(self):
             pass
 
-        @classmethod
-        def get_publish_settings(cls):
+        @abstractmethod
+        def get_publish_settings():
             print("[DEBUG] get_publish_settings() called")
-            if cls._publish_settings is None:
-                cls._publish_settings = JsonUtils.read_json("/home/rapa/NA_Spirit/open/config/publish_settings.json")
-            print(f"[DEBUG] get_publish_settings() returns: {cls._publish_settings}")  # 디버깅용 출력
-            return cls._publish_settings  
+            if publish_settings is None:
+                publish_settings = JsonUtils.read_json("/home/rapa/NA_Spirit/open/config/publish_settings.json")
+            print(f"[DEBUG] get_publish_settings() returns: {publish_settings}")  # 디버깅용 출력
+            return publish_settings  
 
-        @classmethod     
-        def get_caching_settings(cls):
-            if cls._caching_settings is None:
-                cls._caching_settings = JsonUtils.read_json("/home/rapa/NA_Spirit/open/config/caching_settings.json")
-            return cls._caching_settings
+        @abstractmethod     
+        def get_caching_settings():
+            if caching_settings is None:
+                caching_settings = JsonUtils.read_json("/home/rapa/NA_Spirit/open/config/caching_settings.json")
+            return caching_settings
         
         @abstractmethod
         def validate(self):
