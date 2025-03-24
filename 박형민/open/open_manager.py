@@ -35,6 +35,9 @@ class OpenManager:
             raise ValueError(f"Invalid step: {self.step}. Please choose one of: {', '.join(self.dcc_opens_dict.keys())}.")
         
     def open_setup(self) -> None:
+        """
+        각 스텝에 맞게 씬을 세팅
+        """
         task_id = self.context.task["id"]
         file_format = ".ma"
         print(f"Debug: open_setup() is passing task_id={task_id}, {file_format}")
@@ -42,8 +45,14 @@ class OpenManager:
         self.open_class.Open.reference(task_id=task_id, file_format=file_format)
     
     def validate(self):
+        """
+        publish 전 유효성 체크
+        """
         self.open_class.Publish.validate()
     
     def publish(self,session_path:str):
+        """
+        publish
+        """
         self.open_class.Publish().publish(session_path,context=self.context)
         

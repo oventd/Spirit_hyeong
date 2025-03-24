@@ -31,9 +31,7 @@ class EntityUsdConnector:
             ANIMATING: ["asset"],
             LIGHTING: ["light"],
         }
-        # self.step_usd_dict = {}
 
-        # Step을 문자열로 선언하여 객체를 동적으로 불러올 수 있도록 변경
         self.step_class_mapping = {
             MODELING: "Model",
             RIGGING: "Rig",
@@ -46,6 +44,7 @@ class EntityUsdConnector:
 
     @staticmethod
     def get_arg_dict(geo=None, char=None, anim_cache=None, material=None, camera=None, light=None):
+
         return {
             "geo": geo,
             "asset": char,
@@ -103,7 +102,9 @@ class EntityUsdConnector:
         processor = step_class(self)
         processor.connect(provided_args)
 
-    # 내부 클래스들 정의
+    """
+    내부 step 클래스들. 시간 부족으로 인하여 내부에 구현.
+    """
     class Model:
         def __init__(self, parent):
             self.parent = parent

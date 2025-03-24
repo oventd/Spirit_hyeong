@@ -3,13 +3,15 @@ from pxr import Usd, UsdGeom, Sdf, Gf, UsdShade
 class UsdUtils:
     @staticmethod
     def create_usd_file(file_path, ascii=True):
-        # USD 파일을 ASCII(.usda)로 저장하지만 확장자는 .usd
+        """
+        USD 파일을 ASCII(.usda)로 저장하지만 확장자는 .usd
+        """
         if ascii:
             args = {"format": "usda"}
         else:
             args = {"format": "usdc"}
         layer = Sdf.Layer.CreateNew(file_path, args)
-        # USD Stage 생성 (ASCII 모드)
+        # USD Stage 생성
         stage = Usd.Stage.Open(layer)
         # USD 파일 저장
         stage.GetRootLayer().Save()
@@ -17,10 +19,21 @@ class UsdUtils:
     
     @staticmethod
     def set_default_prim(stage, prim):
+        """
+        입력받은 prim을 default prim로 설정
+
+        :param stage: USD Stage
+        :param prim: USD Prim
+        """
         stage.SetDefaultPrim(prim)
     
     @staticmethod
     def get_stage(file_path):
+        """
+        입력받은 패스의 Stage를 가져오는 메서드
+
+        :param file_path: usd file path
+        """
         try:
             stage = Usd.Stage.Open(file_path)
             return stage
@@ -29,14 +42,31 @@ class UsdUtils:
     
     @staticmethod
     def create_stage(file_path):
+        """
+        usd 패스에 stage를 만드는 메서드
+
+        :param file_path: usd file path
+        """
         return Usd.Stage.CreateNew(file_path)
     
     @staticmethod
     def get_prim(stage, path):
+        """
+        stage의 path에 맞는 Prim를 가져오는 메서드
+
+        :param stage: USD Stage
+        :param path: USD Prim Path
+        """
         return stage.GetPrimAtPath(path)
 
     @staticmethod
-    def create_xform(stage, path = "/Root", parent_prim = None):
+    def create_xform(stage, path = "/Root"):
+        """
+        xform 노드를 생성
+
+        :param stage: USD Stage
+        :param path: USD Prim Path
+        """
         xform = UsdGeom.Xform.Define(stage, path)
         
         defaltPrim = stage.GetDefaultPrim()
@@ -47,7 +77,13 @@ class UsdUtils:
         return xform.GetPrim()
         
     @staticmethod
-    def create_scope(stage, path = "/Root", parent_prim = None):
+    def create_scope(stage, path = "/Root"):
+        """
+        scope 노드를 생성
+
+        :param stage: USD Stage
+        :param path: USD Prim Path
+        """
         scope = UsdGeom.Scope.Define(stage, path)
         
         defaltPrim = stage.GetDefaultPrim()
@@ -58,19 +94,39 @@ class UsdUtils:
     
     @staticmethod
     def add_reference(prim, path):
+        """
+        prim에 path를 reference로 추가
+
+        :param prim: USD Prim
+        :param path: USD Prim Path
+        """
         stage = prim.GetStage()
         prim.GetReferences().AddReference(path)
         stage.GetRootLayer().Save()
     
     @staticmethod
-    def create_variants_set(xform, variant_set_name: str):
-        stage = xform.GetStage()
-        # Variant Set 생성
-        variant_set = xform.GetVariantSets().AddVariantSet(variant_set_name)
+    def create_variants_set(prim, variant_set_name: str):
+        """
+        prim에 variant set를 생성
+
+        :param prim: USD Prim
+        :param variant_set_name: variant set name
+        """
+        stage = prim.GetStage()
+        
+        variant_set = prim.GetVariantSets().AddVariantSet(variant_set_name)
         stage.GetRootLayer().Save()
         return variant_set
     @staticmethod
     def add_reference_to_variant_set(prim, variant_set_name, variants : dict, set_default = True):
+        """
+        variant set에 reference를 추가
+        
+        :param prim: USD Prim
+        :param variant_set_name: variant set name
+        :param variants: variant name, reference path
+        :param set_default: set default variant, varient set으로 적용
+        """
         variant_set = prim.GetVariantSets().GetVariantSet(variant_set_name)
 
         if not variant_set:
@@ -91,9 +147,14 @@ class UsdUtils:
         stage.GetRootLayer().Save()
 
     @staticmethod
-    def set_transform(prim, translate=None, rotate=None, scale=None):
+    def set_transform(prim, translate: tuple=None, rotate: tuple=None, scale: tuple=None):
         """
-        prim의 변환(이동, 회전, 스케일)을 설정하는 함수
+        prim의 이동, 회전, 스케일을 설정하는 함수
+
+        :param prim: USD Prim
+        :param translate: 이동 (x, y, z)
+        :param rotate: 회전 (x, y, z)
+        :param scale: 스케일 (x, y, z)
         """
         xform = UsdGeom.Xform(prim)
 
@@ -120,18 +181,33 @@ class UsdUtils:
     
     @staticmethod
     def add_sublayer(stage, path):
+        """
+        stage에 sublayer를 추가
+
+        :param stage: USD Stage
+        :param path: 서브레이어 USD Path
+        """
         com_layer = UsdUtils.get_stage(path).GetRootLayer()
         if com_layer not in stage.GetLayerStack():
             stage.GetRootLayer().subLayerPaths.append(path)
         stage.GetRootLayer().Save()
 
     @staticmethod
-    def get_prim_path(prim):
+    def get_prim_path(prim)->str:
+        """
+        prim의 패스를 반환
+
+        :param prim: USD Prim
+        """
         return prim.GetPath()
     
     @staticmethod
-    def usd_to_dict(prim):
-        """USD의 계층구조를 dict로 변환"""
+    def usd_to_dict(prim) -> dict:
+        """
+        prim의 하위 hierarchy를 dict로 변환
+
+        :param prim: USD Prim
+        """
         return {
             "name": prim.GetName(),
             "type": prim.GetTypeName(),
@@ -139,6 +215,13 @@ class UsdUtils:
         }
     @staticmethod
     def find_prim_paths_by_type_recursion(usd_dict, prim_type, parent_path=""):
+        """
+        재귀를 통해 타입에 맞는_prim_path를 찾는 메서드
+
+        :param usd_dict: USD Dict
+        :param prim_type: 타입
+        :param parent_path: 부모 패스
+        """
         paths = []
         current_path = f"{parent_path}/{usd_dict['name']}" if parent_path else f"/{usd_dict['name']}"
 
@@ -152,6 +235,13 @@ class UsdUtils:
 
         return paths
     def find_prim_paths_by_type(usd_dict, prim_type):
+        """
+        재귀를 통해 타입에 맞는_prim_path를 찾는 메서드
+        재귀함수를 실행함
+
+        :param usd_dict: USD Dict
+        :param prim_type: 타입
+        """
         lists = UsdUtils.find_prim_paths_by_type_recursion(usd_dict, prim_type)
         for n, i in enumerate(lists):
             lists[n] = i
@@ -160,6 +250,12 @@ class UsdUtils:
 
     @staticmethod
     def bind_material(prim, material_path):
+        """
+        prim에 material path의 material를 bind하는 메서드
+
+        :param prim: USD Prim
+        :param material_path: material path
+        """
         stage = prim.GetStage()
         material = UsdShade.Material.Get(stage, material_path)
         UsdShade.MaterialBindingAPI(prim).Bind(material)
@@ -186,26 +282,6 @@ if __name__ == "__main__":
 
     geo_prim = UsdUtils.get_prim(root_stage, geo_paths[0])
     UsdUtils.bind_material(geo_prim, mat_paths[0])
-
-
-
-
-
-    
-# mesh export
-#file -force -options ";exportUVs=1;exportSkels=none;exportSkin=none;exportBlendShapes=0;exportDisplayColor=0;filterTypes=nurbsCurve;exportColorSets=0;exportComponentTags=0;defaultMeshScheme=catmullClark;animation=0;eulerFilter=0;staticSingleSample=0;startTime=1;endTime=48;frameStride=1;frameSample=0.0;defaultUSDFormat=usda;rootPrim=;rootPrimType=xform;defaultPrim=geo;exportMaterials=0;shadingMode=useRegistry;convertMaterialsTo=[UsdPreviewSurface];exportAssignedMaterials=1;exportRelativeTextures=automatic;exportInstances=1;exportVisibility=1;mergeTransformAndShape=1;includeEmptyTransforms=1;stripNamespaces=0;worldspace=0;exportStagesAsRefs=1;excludeExportTypes=[];legacyMaterialScope=0" -typ "USD Export" -pr -es "/home/rapa/NA_Spirit/geo.usd";
-    
-# material export
-# file -force -options ";exportUVs=1;exportSkels=none;exportSkin=none;exportBlendShapes=0;exportDisplayColor=0;filterTypes=nurbsCurve;exportColorSets=0;exportComponentTags=0;defaultMeshScheme=catmullClark;animation=0;eulerFilter=0;staticSingleSample=0;startTime=1;endTime=48;frameStride=1;frameSample=0.0;defaultUSDFormat=usda;rootPrim=;rootPrimType=xform;defaultPrim=geo;exportMaterials=1;shadingMode=useRegistry;convertMaterialsTo=[MaterialX];exportAssignedMaterials=1;exportRelativeTextures=automatic;exportInstances=1;exportVisibility=1;mergeTransformAndShape=1;includeEmptyTransforms=1;stripNamespaces=1;worldspace=0;exportStagesAsRefs=1;excludeExportTypes=[Meshes];legacyMaterialScope=0" -typ "USD Export" -pr -es "/home/rapa/NA_Spirit/tex.usd";
-
-
-    
-# mesh export
-#file -force -options ";exportUVs=1;exportSkels=none;exportSkin=none;exportBlendShapes=0;exportDisplayColor=0;filterTypes=nurbsCurve;exportColorSets=0;exportComponentTags=0;defaultMeshScheme=catmullClark;animation=0;eulerFilter=0;staticSingleSample=0;startTime=1;endTime=48;frameStride=1;frameSample=0.0;defaultUSDFormat=usda;rootPrim=;rootPrimType=xform;defaultPrim=geo;exportMaterials=0;shadingMode=useRegistry;convertMaterialsTo=[UsdPreviewSurface];exportAssignedMaterials=1;exportRelativeTextures=automatic;exportInstances=1;exportVisibility=1;mergeTransformAndShape=1;includeEmptyTransforms=1;stripNamespaces=0;worldspace=0;exportStagesAsRefs=1;excludeExportTypes=[];legacyMaterialScope=0" -typ "USD Export" -pr -es "/home/rapa/NA_Spirit/geo.usd";
-    
-# material export
-# file -force -options ";exportUVs=1;exportSkels=none;exportSkin=none;exportBlendShapes=0;exportDisplayColor=0;filterTypes=nurbsCurve;exportColorSets=0;exportComponentTags=0;defaultMeshScheme=catmullClark;animation=0;eulerFilter=0;staticSingleSample=0;startTime=1;endTime=48;frameStride=1;frameSample=0.0;defaultUSDFormat=usda;rootPrim=;rootPrimType=xform;defaultPrim=geo;exportMaterials=1;shadingMode=useRegistry;convertMaterialsTo=[MaterialX];exportAssignedMaterials=1;exportRelativeTextures=automatic;exportInstances=1;exportVisibility=1;mergeTransformAndShape=1;includeEmptyTransforms=1;stripNamespaces=1;worldspace=0;exportStagesAsRefs=1;excludeExportTypes=[Meshes];legacyMaterialScope=0" -typ "USD Export" -pr -es "/home/rapa/NA_Spirit/tex.usd";
-
 
 
 

@@ -50,7 +50,7 @@ class MayaSessionGeometryPublishPlugin(HookBaseClass):
         """
 
         return """
-        <p>This plugin publishes session geometry for the current session. Any
+        <p>This plugin publishes session geometry USD for the current session. Any
         session geometry will be exported to the path defined by this plugin's
         configured "Publish Template" setting. The plugin will fail to validate
         if the "AbcExport" plugin is not enabled or cannot be found.</p>

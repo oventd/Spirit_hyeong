@@ -28,6 +28,9 @@ class AssetUploadManager:
         self.thumbnail_url = None  # 썸네일 URL을 저장할 변수 초기화
 
     def get_user_name(self):
+        """
+        user 이름을 반환
+        """
         creater_id=self.context.user["name"]
         return creater_id
 

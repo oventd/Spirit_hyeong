@@ -18,7 +18,7 @@ class StepOpenMaya(ABC):
     def __init__(self):
         pass
     
-    # Open 클래스: 'setup' 관련 기능을 다룬다.    
+    # Open
     class Open(ABC):
         @abstractmethod
         def setup(self):
@@ -28,11 +28,11 @@ class StepOpenMaya(ABC):
         def reference(self):
             pass
 
-    # Publish 클래스: 퍼블리시 관련 기능을 다룬다.    
+    # Publish   
     class Publish(ABC):
 
-        _publish_settings = None  # JSON 캐싱
-        _render_settings = None  # JSON 캐싱
+        _publish_settings = None 
+        _caching_settings = None
 
         def __init__(self):
             pass
@@ -46,10 +46,10 @@ class StepOpenMaya(ABC):
             return cls._publish_settings  
 
         @classmethod     
-        def get_render_settings(cls):
-            if cls._render_settings is None:
-                cls._render_settings = JsonUtils.read_json("/home/rapa/NA_Spirit/open/config/render_settings.json")
-            return cls._render_settings
+        def get_caching_settings(cls):
+            if cls._caching_settings is None:
+                cls._caching_settings = JsonUtils.read_json("/home/rapa/NA_Spirit/open/config/caching_settings.json")
+            return cls._caching_settings
         
         @abstractmethod
         def validate(self):
@@ -57,6 +57,7 @@ class StepOpenMaya(ABC):
         
         @abstractmethod
         def publish(session_path: str,context):
+            #step 가져오기
             step = SgPathUtils.get_step_from_path(session_path)
             
             # 퍼블리시 설정 및 렌더 설정 가져오기
@@ -64,12 +65,14 @@ class StepOpenMaya(ABC):
             
             if not publish_settings[step]:
                 return
-
-            render_settings = JsonUtils.read_json("/home/rapa/NA_Spirit/open/config/render_settings.json")
-
+            
+            # 캐시 설정 가져오기
+            caching_settings = JsonUtils.read_json("/home/rapa/NA_Spirit/open/config/caching_settings.json")
+            # 퍼블리쉬 경로 가져오기
             usd_export_path = StepOpenMaya.Publish.get_usd_export_path(session_path)
-            usd_export_options = render_settings.get("export_usd_static_mesh", {})
+            usd_export_options = caching_settings.get("export_usd_static_mesh", {})
 
+            # 애니메이팅 여부 확인
             if step == "MDL" or step == "RIG" or step == "MMV":
                 animated = False
 
@@ -77,7 +80,7 @@ class StepOpenMaya(ABC):
                 animated = True
                 frame_range = FlowUtils.get_cut_in_out(context.entity["id"])
                 print("frame_range : ", frame_range)
-            
+            # publish
             published_usds = {}
             for item, options in publish_settings[step].items():
                 if not options:
@@ -86,7 +89,7 @@ class StepOpenMaya(ABC):
                 all = options.get("all", False)
                 is_referenced = options.get("isReferenced",False)
                 maya = options.get("maya", False)
-
+                # 레퍼런스 오브젝트가 있을 경우. 레퍼런스 경로 처리
                 if is_referenced is True:
                     
                     if all is True:
@@ -97,9 +100,10 @@ class StepOpenMaya(ABC):
                         MayaReferenceUsdExporter(step, usd_export_path, item, export_animated = True ,export_static = False,frame_range = frame_range).run()
                         root_usd_path = UsdVersionConnector.connect(usd_export_path)
                         published_usds[item] = [root_usd_path]
+                
+                # 레퍼런스 오브젝트가 없을 때는 전체 캐싱
                 if is_referenced is False:
                     if all is True:
-                    
                         cmds.select(item)
                         if animated is True:
                             MayaUtils.file_export(usd_export_path,usd_export_options,frame_range=frame_range)
@@ -109,19 +113,12 @@ class StepOpenMaya(ABC):
                         root_usd_path = UsdVersionConnector.connect(usd_export_path)
                         print(f"root_usd_path: {root_usd_path}")
                         published_usds[item] = [root_usd_path]
-                    # elif all is not True:
-                    #     children = cmds.listRelatives(item, type='transform')
-                    #     child_usds = []
-                    #     for child in children:
-                    #         cmds.select(item)
-                    #         MayaUtils.file_export(usd_export_path,usd_export_options)
-                    #         child_usds.append
+
             
             print(f"published_usds: {published_usds}")
             EntityUsdConnector(session_path).connect(published_usds)
             return 
-                                            
-                         
+
 
         @staticmethod
         def export_cache(group_name, step, file_path=""):
@@ -171,10 +168,10 @@ class StepOpenMaya(ABC):
         @staticmethod
         def render_setting(step, category, group):
             """ 렌더링 설정을 가져오는 메서드 """
-            render_settings = StepOpenMaya.Publish.get_render_settings()
+            caching_settings = StepOpenMaya.Publish.get_caching_settings()
 
             # Step이 존재하는지 확인
-            step_settings = render_settings.get(step, {})
+            step_settings = caching_settings.get(step, {})
             if not step_settings:
                 print(f"Warning: No render settings found for step '{step}'. Using defaults.")
                 return {}

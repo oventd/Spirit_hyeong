@@ -29,7 +29,12 @@ class AssetDownloadManager:
         tk = self.engine.sgtk
         return tk.project_path
 
-    def open_maya_file_force(self, file_path):
+    def open_maya_file_force(self, file_path) -> None:
+        """
+        오류가 존재하더라도 마야 씬을 오픈하는 메서드.
+        레퍼런스 오류가 있을 경우 씬을 열기 위해 사용되는 메서드임.
+        :param file_path: 파일 경로
+        """
         cmds.file(
             file_path,
             force=True,  # 기존 씬 변경 내용 무시하고 강제 오픈
@@ -55,14 +60,17 @@ class AssetDownloadManager:
                     found_files.append(os.path.join(dirpath, file))
         return found_files
 
-    def replace_reference_paths(self, input1, input2):
+    def replace_reference_paths(self, source_path, destination_path):
         """
-        Maya 씬의 모든 reference 노드를 찾아 기존 경로를 input1에서 input2로 변경하여 기존 노드에 반영.
+        Maya 씬의 모든 reference 노드를 찾아 기존 경로를 source_path에서 destination_path로 변경하여 기존 노드에 반영.
+
+        :param source_path: 기존 경로
+        :param destination_path: 변경한 경로
         """
         references = cmds.file(q=True, reference=True) or []
         
         if not references:
-            print("⚠️ Reference가 없습니다.")
+            print(" Reference가 없습니다.")
             return
         
         modified_references = []
@@ -71,7 +79,7 @@ class AssetDownloadManager:
             try:
                 reference_node = cmds.referenceQuery(ref, referenceNode=True)
                 ref_path = cmds.referenceQuery(ref, filename=True, withoutCopyNumber=True)
-                new_path = ref_path.replace(input1, input2)
+                new_path = ref_path.replace(source_path, destination_path)
 
                 if ref_path != new_path:
                     print(f"🔄 변경됨: {ref_path} → {new_path}")
@@ -79,16 +87,19 @@ class AssetDownloadManager:
                     modified_references.append(new_path)
             
             except Exception as e:
-                print(f"❌ Reference 변경 실패: {ref} | 오류: {e}")
+                print(f" Reference 변경 실패: {ref} | 오류: {e}")
 
         if modified_references:
-            print("✅ 모든 reference가 성공적으로 업데이트되었습니다.")
+            print(" 모든 reference가 성공적으로 업데이트되었습니다.")
         else:
-            print("⚠️ 변경된 reference가 없습니다.")
+            print(" 변경된 reference가 없습니다.")
 
     def copy_folder(self, source_folder: str, destination_folder: str):
         """
         특정 폴더를 대상 경로로 복사하는 메서드.
+
+        :param source_folder: 원본 폴더 경로
+        :param destination_folder: 복사할 대상 폴더 경로
         """
         if not os.path.exists(source_folder):
             raise FileNotFoundError(f"원본 폴더가 존재하지 않습니다: {source_folder}")
@@ -123,29 +134,17 @@ class AssetDownloadManager:
         except Exception as e:
             print(f"Unexpected error: {e}")
 
-    def process(self, category, db_asset_dir):
-        current_session = self.get_current_maya_scene_path()
-
-        asset_name = os.path.basename(db_asset_dir)
-        project_asset_dir = os.path.join(self.project_dir, "assets", category, asset_name)
-
-        self.copy_folder(db_asset_dir, project_asset_dir)
-        self.replace_paths(project_asset_dir)
-
-        rig_ma_publish_dir = os.path.join(project_asset_dir, "RIG", "publish", "maya")
-        last_rig_ma = self.get_latest_version_file(rig_ma_publish_dir)
-
-        if last_rig_ma:
-            cmds.file(last_rig_ma, reference=True)
-
     def replace_paths(self, project_asset_dir):
+        """
+        기존에 존재하는 레퍼런스 path를 순회하며 경로를 수정하는 메서드
+        """
         references = cmds.file(q=True, reference=True) or []
         
         if references:
             original_path = cmds.referenceQuery(references[0], filename=True, withoutCopyNumber=True)
             original_dir = SgPathUtils.trim_entity_path(original_path)[0]
         else:
-            print("⚠️ Reference가 없습니다. 기존 경로를 찾을 수 없습니다.")
+            print(" Reference가 없습니다. 기존 경로를 찾을 수 없습니다.")
             return
 
         maya_files = self.find_files_by_extension(project_asset_dir, (".ma", ".mb"))
@@ -164,12 +163,14 @@ class AssetDownloadManager:
         for usd_file in usd_files:
             self.replace_text_in_ascii_file(usd_file, original_dir, project_asset_dir)
 
-    def get_latest_version_file(self, folder_path):
+    def get_latest_version_file(self, folder_path) -> str:
         """
         주어진 폴더에서 '파일명.v###.ma' 형식의 파일 중 최신 버전의 파일을 반환
+
+        :param folder_path: 검색할 폴더 경로
         """
         if not os.path.exists(folder_path):
-            print(f"⚠️ 폴더가 존재하지 않습니다: {folder_path}")
+            print(f" 폴더가 존재하지 않습니다: {folder_path}")
             return None
 
         pattern = re.compile(r"^(.*)\.v(\d{3})\.ma$")
@@ -187,6 +188,32 @@ class AssetDownloadManager:
 
         return os.path.join(folder_path, latest_file) if latest_file else None
 
-    def get_current_maya_scene_path(self):
+    def get_current_maya_scene_path(self) -> str:
+        """
+        현재 열려있는 마야 세션의 경로를 반환
+        """
         scene_path = cmds.file(q=True, sceneName=True)
         return scene_path if scene_path else None
+
+    def process(self, category, db_asset_dir):
+        """
+        실행 메서드
+        """
+        # 현재 세션 정보 저장
+        current_session = self.get_current_maya_scene_path()
+        # 대상 에셋 정보 저장
+        asset_name = os.path.basename(db_asset_dir)
+        project_asset_dir = os.path.join(self.project_dir, "assets", category, asset_name)
+        # 폴더 복사
+        self.copy_folder(db_asset_dir, project_asset_dir)
+        # 레퍼런스 경로 수정
+        self.replace_paths(project_asset_dir)
+        # 에셋의 리깅의 마지막 버전 서치
+        rig_ma_publish_dir = os.path.join(project_asset_dir, "RIG", "publish", "maya")
+        last_rig_ma = self.get_latest_version_file(rig_ma_publish_dir)
+        # 기존 세션으로 돌아옴
+        cmds.file(current_session, open=True, force=True)
+        # 기존 세션에 에셋 레퍼런스 추가
+        if last_rig_ma:
+            cmds.file(last_rig_ma, reference=True)
+            cmds.file(self.get_current_maya_scene_path(), save=True)
