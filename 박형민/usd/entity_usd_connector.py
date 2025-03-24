@@ -10,6 +10,10 @@ from sg_path_utils import SgPathUtils
 
 
 class EntityUsdConnector:
+    """
+    Entity USD 파일에 각 스텝에 맞게 퍼블리시 데이터를 연결해주는 클래스
+    """
+    
     def __init__(self, session_path: str):
         self.session_path = session_path
         self.entity_path, _ = SgPathUtils.trim_entity_path(session_path)
